@@ -17,7 +17,8 @@ cargo run --release -- -c config/test.yaml
 
 or build/run with `docker` or `buildah`:
 
-```
+```bash
+# Run both from root of the repo.
 docker build . -t fib-service:latest
 
 docker run -it -v ./config/:/app -e RUST_LOG=debug -e FIB_SERVICE_CONFIG_LOCATION=/app/test.yaml fib-service:latest
@@ -34,7 +35,7 @@ You could add probes to your deployment to only route traffic to copies of this 
 #### Pre-computed fibonacci numbers
 
 I made the decision to pre-cache the numbers for the purposes of simplicity. This was a very intentional tradeoff between service complexity, memory, and amortizing compute costs for end users. 
-In this case, I chose to optimize for making sure each user has the fastest API call possible with all values within a range precomputed. 
+In this case, I chose to optimize for making sure each user has the fastest API call possible with all values within a precomputed range of values. 
 If you were scaling this kind of service up a substantial amount, you would probably have multiple instances and it would be worth caching values in an external cache like Redis/memcached.
 You are able to specify the max fibonacci number to precompute in config, and an additional feature could be to not exclude overly large numbers by computing any large value by hand. But, that is a potential avenue for a DoS attack, which is part of why I chose to put the hard cap on the max length of the sequence.
 
