@@ -132,7 +132,7 @@ pub(super) async fn start_server<'a>(config: FibServiceConfig) {
     let max_number_filter = warp::any().map(move || config.max_supported_number);
 
     let fibonacci = warp::get()
-        .and(warp::path!("v1" / u32))
+        .and(warp::path!("v1" / "fibonacci" / u32))
         .and(warp::path::end())
         .and(max_number_filter)
         .and(table_filter)
@@ -173,6 +173,7 @@ async fn generate_fibs(
     max_number: u32,
     lookup: Arc<Vec<String>>,
 ) -> Result<impl warp::Reply, warp::Rejection> {
+    // This behavior is at least explicit, I assume it is up to debate what the behavior should be.
     if count == 0 {
         return Ok(with_status(json(&FibResponse::default()), StatusCode::OK));
     }
