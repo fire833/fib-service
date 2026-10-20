@@ -122,7 +122,21 @@ fn test_generate_fib_table() {
     }
 }
 
-pub(super) async fn start_server<'a>(config: FibServiceConfig) {
+#[test]
+fn test_generate_strings() {
+    let len = 5000;
+    let table = generate_strings_table(generate_fib_table(len));
+
+    assert_eq!(table.len(), len as usize);
+    assert_eq!(table[0], "0".to_string());
+    assert_eq!(table[1], "1".to_string());
+    assert_eq!(table[2], "1".to_string());
+    assert_eq!(table[3], "2".to_string());
+    assert_eq!(table[4], "3".to_string());
+    assert_eq!(table[5], "5".to_string());
+}
+
+pub(super) async fn start_server(config: FibServiceConfig) {
     info!("pre-computing lookup table...");
     let table = Arc::new(generate_strings_table(generate_fib_table(
         config.max_supported_number,
@@ -133,14 +147,12 @@ pub(super) async fn start_server<'a>(config: FibServiceConfig) {
 
     let fibonacci = warp::get()
         .and(warp::path!("v1" / "fibonacci" / u32))
-        .and(warp::path::end())
         .and(max_number_filter)
         .and(table_filter)
-        .and_then(generate_fibs);
+        .then(generate_fibs);
 
     let health = warp::get()
         .and(warp::path!("healthz").or(warp::path!("readyz")).unify())
-        .and(warp::path::end())
         .map(|| with_status(json(&HealthResponse::default()), StatusCode::OK));
 
     let catchall = warp::any().map(|| {
@@ -168,29 +180,22 @@ pub(super) async fn start_server<'a>(config: FibServiceConfig) {
 }
 
 /// API function for generating results.
-async fn generate_fibs(
-    count: u32,
-    max_number: u32,
-    lookup: Arc<Vec<String>>,
-) -> Result<impl warp::Reply, warp::Rejection> {
+async fn generate_fibs(count: u32, max_number: u32, lookup: Arc<Vec<String>>) -> impl warp::Reply {
     // This behavior is at least explicit, I assume it is up to debate what the behavior should be.
     if count == 0 {
-        return Ok(with_status(json(&FibResponse::default()), StatusCode::OK));
+        return with_status(json(&FibResponse::default()), StatusCode::OK);
     }
 
     if count > max_number {
         let bad_req = StatusCode::BAD_REQUEST;
-        return Ok(with_status(
+        return with_status(
             json(&FibErrorResponse::new(
                 bad_req,
                 format!("only {max_number} fibonacci numbers are supported."),
             )),
             bad_req,
-        ));
+        );
     }
 
-    Ok(with_status(
-        json(&FibResponse::new(&lookup, count)),
-        StatusCode::OK,
-    ))
+    with_status(json(&FibResponse::new(&lookup, count)), StatusCode::OK)
 }
