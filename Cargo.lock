@@ -266,7 +266,6 @@ dependencies = [
  "log",
  "num-bigint",
  "serde",
- "serde_json",
  "tokio",
  "warp",
  "yaml_serde",
