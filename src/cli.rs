@@ -23,13 +23,17 @@ use crate::{config::FibServiceConfig, errors::FibServiceError};
 #[derive(clap::Parser, Debug)]
 pub(super) struct FibServiceArgs {
     /// Location where config file lives. Currently, only YAML inputs are supported.
-    #[arg(short, long, default_value_t = String::from("./config.yaml"), env = "FIB_SERVICE_CONFIG_LOCATION")]
+    #[arg(short, long, env = "FIB_SERVICE_CONFIG_LOCATION")]
     pub(super) config_location: String,
 }
 
 impl FibServiceArgs {
     pub(super) fn get_config(&self) -> Result<FibServiceConfig, FibServiceError> {
-        let conf = yaml_serde::from_str(&read_to_string(&self.config_location)?)?;
-        Ok(conf)
+        match self.config_location.is_empty() {
+            true => Ok(FibServiceConfig::default()),
+            false => Ok(yaml_serde::from_str(&read_to_string(
+                &self.config_location,
+            )?)?),
+        }
     }
 }
